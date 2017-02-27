@@ -1,5 +1,5 @@
-; Gammaboy
-; TODO: Use skip flags
+; Radboy program
+; CC-BY-NC furrtek 2017
 
 .ROMDMG
 .NAME "RADBOY1"
@@ -32,10 +32,16 @@ SLOT 0 $0000
   ld     a,(hl)
   ret
 
-.ORG $0010					; rst $10: (HL)=DE
-  ld     (hl),d
+.ORG $0010					; rst $18: DE=(HL)
+  ld     e,(hl)
   inc    hl
+  ld     d,(hl)
+  ret
+  
+.ORG $0018					; rst $10: (HL)=DE
   ld     (hl),e
+  inc    hl
+  ld     (hl),d
   ret
 
 .ORG $0030					; rst $30: Jumptable HL index A
@@ -87,7 +93,7 @@ Start:
   jr     z,-
   xor    a
   ld     (VBL_FLAG),a
-  call   update
+  call   vblank
   jr     -
 
   .INCLUDE "util.asm"
@@ -99,6 +105,7 @@ Start:
   .INCLUDE "draw.asm"
   .INCLUDE "graph.asm"
   .INCLUDE "cpm.asm"
+  .INCLUDE "sound.asm"
 
   .INCLUDE "digits.asm"
 

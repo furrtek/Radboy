@@ -1,8 +1,10 @@
+; A = digit
+; DE = VRAM address
 draw_digit:
   bit    6,a
-  jr     nz,clear_digit		; "Clear digit" flag is set
+  jr     nz,clear_digit		; "Clear digit" flag ?
 
-  and    $F                 ; Compute map_font table index
+  and    $F                 ; Compute digits_map table index
   sla    a                  ; *8
   sla    a
   sla    a
@@ -24,7 +26,7 @@ draw_digit:
   dec    b
   jr     nz,-
   ld     a,e
-  add    28					; DE+=28 Next tile line
+  add    28					; DE+=(32-4) Next tile line
   ld     e,a
   jr     nc,+
   inc    d
@@ -44,7 +46,7 @@ clear_digit:
   dec    b
   jr     nz,-
   ld     a,e
-  add    28					; DE+=28 Next tile line
+  add    28					; DE+=(32-4) Next tile line
   ld     e,a
   jr     nc,+
   inc    d
@@ -59,7 +61,7 @@ state_0:
   ld     a,(DIGIT_3)
   bit    7,a
   jr     nz,state_1			; Skip flag
-  ld     de,$9800+(32*6)+0
+  ld     de,$9800+(32*6)+1
   call   draw_digit
   ret
   
@@ -69,7 +71,7 @@ state_1:
   ld     a,(DIGIT_2)
   bit    7,a
   jr     nz,state_2			; Skip flag
-  ld     de,$9800+(32*6)+4
+  ld     de,$9800+(32*6)+5
   call   draw_digit
   ret
   
@@ -79,7 +81,7 @@ state_2:
   ld     a,(DIGIT_1)
   bit    7,a
   jr     nz,state_3			; Skip flag
-  ld     de,$9800+(32*6)+8
+  ld     de,$9800+(32*6)+9
   call   draw_digit
   ret
 
@@ -87,28 +89,28 @@ state_3:
   ld     hl,STATE			; Inc state
   inc    (hl)
   ld     a,(DIGIT_0)		; Can't skip units
-  ld     de,$9800+(32*6)+12
+  ld     de,$9800+(32*6)+13
   call   draw_digit
   ret
   
 state_4:
   ld     hl,STATE			; Inc state
   inc    (hl)
-  ld     a,(HV_ENABLE)
-  bit    7,a
-  jr     z,state_5			; Skip flag
-  res    7,a
-  ld     (HV_ENABLE),a
-  rrca                      ; HV flag in carry
-  ld     a,28               ; "OFF"
-  jr     nc,+
-  ld     a,22				; "ON"
+  ;ld     a,(HV_ENABLE)
+  ;bit    7,a
+  ;jr     z,state_5			; Skip flag
+  ;res    7,a
+  ;ld     (HV_ENABLE),a
+  ;rrca                      ; HV flag in carry
+  ;ld     a,28               ; "OFF"
+  ;jr     nc,+
+  ;ld     a,22				; "ON"
 +:
-  ld     bc,$0302
-  ld     hl,$9800+(32*4)+9
-  call   map_inc
+  ;ld     bc,$0302
+  ;ld     hl,$9800+(32*4)+9
+  ;call   map_inc
   ret
-  
+
 state_5:
   ld     hl,STATE			; Inc state
   inc    (hl)
@@ -283,12 +285,3 @@ state_reset:
   xor    a					; Reset cycle
   ld     (STATE),a
   ret
-
-jt_draw:
-  .dw state_0				; Draw DIGIT_3
-  .dw state_1				; Draw DIGIT_2
-  .dw state_2				; Draw DIGIT_1
-  .dw state_3				; Draw DIGIT_0
-  .dw state_4				; Display HV state
-  .dw state_5				; Update graph
-  .dw state_reset

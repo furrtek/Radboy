@@ -9,24 +9,44 @@ clear_sprites:
   jr     nz,-
   ret
 
+; HL = data address
+; DE = VRAM address
 load_tiles:
+; BP0
+  push   de
+  call   decompress
+  pop    de
+  inc    de
+; BP1
+  jr     decompress			; call + ret
+
+decompress:
   ldi    a,(hl)
+  or     a
+  ret    z					; End of data
+  bit    7,a            	; "Compressed" flag
+  jr     nz,compressed
+  and    $7F				; Clear flag
+  ld     b,a
+-:
+  ldi    a,(hl)
+  ld     (de),a
+  inc    de             	; Skip a bitplane (loaded later)
+  inc    de
+  dec    b
+  jr     nz,-
+  jr     decompress
+compressed:
+  and    $7F				; Clear flag
   ld     b,a
   ldi    a,(hl)
-  ld     c,a
 -:
-  ldh    a,($41)
-  and    3
-  cp     2
-  jr     nc,-
-  ldi    a,(hl)
-  ld    (de),a
+  ld     (de),a
+  inc    de             	; Skip a bitplane (loaded later)
   inc    de
-  dec    bc
-  ld     a,b
-  or     c
+  dec    b
   jr     nz,-
-  ret
+  jr     decompress
 
 ; A = First tile
 ; BC = Width/Height
@@ -60,15 +80,15 @@ map_inc:
   ret
 
 wait_vbl:
-  ldh    a,($40)
+  ldh    a,($40)			; Screen disabled ?
   rlca
   ret    nc
 -:
-  ldh    a,($44)                ;Attend d'etre dans le active display
+  ldh    a,($44)			; Wait for v-blank end
   cp     144
   jr     nc,-
 -:
-  ldh    a,($44)                ;Attend le début d'un VBL (première ligne hors de l'écran, Y=144)
+  ldh    a,($44)			; Wait for v-blank start
   cp     144
   jr     c,-
   ret

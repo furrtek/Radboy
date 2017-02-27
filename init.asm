@@ -1,6 +1,6 @@
 init:
   xor    a
-  ldh    ($26),a			; Disable sound
+  ldh    ($26),a			; Disable APU
 
   ld     hl,$C000			; Clear WRAM
   ld     bc,$1FFF
@@ -57,36 +57,35 @@ init:
 
   ; Map title
   ld     a,73
-  ld     bc,$0902
-  ld     hl,$9800+(32*1)+6
+  ld     bc,$0C04
+  ld     hl,$9800+(32*1)+7
   call   map_inc
 
   ; Map "CPM"
   ld     a,8
   ld     bc,$0302
-  ld     hl,$9800+(32*10)+16
+  ld     hl,$9800+(32*10)+17
   call   map_inc
 
   ; Map "HV:"
-  ld     a,16
-  ld     bc,$0302
-  ld     hl,$9800+(32*4)+6
-  call   map_inc
+  ;ld     a,16
+  ;ld     bc,$0302
+  ;ld     hl,$9800+(32*4)+6
+  ;call   map_inc
   
   call   compute_cpm
 
-  ld     a,$80
-  ld     (HV_ENABLE),a		; Update flag preset
+  call   init_sound
 
   ld     a,%11100100		; BG palette
   ldh    ($47),a
   ld     a,%11100100		; SPR0 palette
   ldh    ($48),a
-  ld     a,95				; LYC at line 95
+  ld     a,96				; LYC match at line 96
   ldh    ($45),a
   ld     a,%01000000		; LYC match STAT interrupt
   ldh    ($41),a
-  ld     a,%00000011		; VBlank and STAT interrupt
+  ld     a,%00000011		; V-blank and STAT interrupt
   ldh    ($FF),a
   ld     a,%10010001		; Display on, window off, tiles @ 8000, sprites off, background on
   ldh    ($40),a
@@ -95,31 +94,4 @@ init:
   ldh    ($0F),a			; Clear pending interrupts
   ei
 
-  ret
-  
-;Inputs:
-;     HL
-;Outputs:
-;     HL is the quotient
-;     A is the remainder
-;     BC is used
-div10:
-  ld     bc,$0D0A
-  xor    a
-  add    hl,hl				; AHL = HL * 8
-  rla
-  add    hl,hl
-  rla
-  add    hl,hl
-  rla
--:
-  add    hl,hl
-  rla
-  cp     c
-  jr     c,+
-  sub    c
-  inc    l
-+:
-  dec    b
-  jr     nz,-
   ret
